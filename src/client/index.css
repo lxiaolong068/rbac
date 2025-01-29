@@ -1,0 +1,202 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 背景噪点效果 SVG */
+@layer base {
+  .noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0.4;
+    pointer-events: none;
+  }
+}
+
+@layer base {
+  :root {
+    /* 亮色主题 */
+    --background: 210 40% 98%;
+    --foreground: 222 84% 5%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 84% 5%;
+
+    --primary: 221 83% 53%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 221 83% 53%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* 暗色主题 */
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --primary: 217 91% 60%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217 33% 18%;
+    --secondary-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --ring: 224 76% 48%;
+  }
+
+  /* 自定义滚动条 */
+  ::-webkit-scrollbar {
+    @apply w-2 h-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted rounded;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-accent rounded hover:bg-accent/80;
+  }
+
+  /* 基础样式 */
+  html {
+    font-family: Inter, system-ui, sans-serif;
+  }
+
+  /* 背景纹理 */
+  .bg-texture {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+    background-image: 
+      linear-gradient(rgb(228 232 239 / 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(228 232 239 / 0.3) 1px, transparent 1px),
+      linear-gradient(rgb(228 232 239 / 0.2) 1px, transparent 1px),
+      linear-gradient(90deg, rgb(228 232 239 / 0.2) 1px, transparent 1px);
+    background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+    background-position: -1px -1px, -1px -1px, -1px -1px, -1px -1px;
+  }
+
+  /* 在暗色模式下隐藏纹理 */
+  .dark .bg-texture {
+    display: none;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased relative min-h-screen;
+  }
+
+  /* 在暗色模式下禁用背景纹理 */
+  .dark body {
+    background-image: none;
+  }
+
+  /* 确保内容在背景之上 */
+  #root {
+    @apply relative z-10;
+  }
+
+  * {
+    @apply border-border;
+  }
+}
+
+@layer components {
+  /* 按钮基础样式 */
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium
+           transition-colors focus-visible:outline-none focus-visible:ring-2 
+           focus-visible:ring-ring focus-visible:ring-offset-2 
+           disabled:pointer-events-none disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+  }
+
+  .btn-outline {
+    @apply border border-input bg-background hover:bg-accent hover:text-accent-foreground;
+  }
+
+  /* 输入框样式 */
+  .form-input {
+    @apply flex h-10 w-full rounded-md border border-input bg-white px-3 py-2 text-sm
+           text-gray-900 transition-colors file:border-0 file:bg-transparent 
+           file:text-sm file:font-medium placeholder:text-muted-foreground
+           focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring
+           disabled:cursor-not-allowed disabled:opacity-50
+           dark:bg-white dark:text-gray-900;
+  }
+
+  /* 标签样式 */
+  .form-label {
+    @apply text-sm font-medium leading-none text-foreground dark:text-foreground mb-2;
+  }
+
+  /* 错误提示 */
+  .form-error {
+    @apply text-sm font-medium text-destructive mt-2;
+  }
+
+  /* 卡片样式 */
+  .card {
+    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+  }
+
+  .card-header {
+    @apply flex flex-col space-y-1.5 p-6;
+  }
+
+  .card-content {
+    @apply p-6 pt-0;
+  }
+
+  .card-footer {
+    @apply flex items-center p-6 pt-0;
+  }
+
+  /* 渐变背景 */
+  .gradient-bg {
+    @apply bg-gradient-to-br from-primary/20 via-accent to-muted;
+  }
+
+  /* 悬浮效果 */
+  .hover-card {
+    @apply transition-all duration-200 hover:shadow-lg hover:shadow-accent/5 hover:border-accent;
+  }
+}

@@ -1,0 +1,7 @@
+# Your rule content
+
+- 所有代码都使用ES Modules
+- 牢记我们要开发的是一套前后端统一（而非前后端分离）的项目
+- 统一使用pnpm命令
+- 本项目需要同时兼容MySQL和pgsql两种数据库
+- 在开发环境下，环境变量中的数据库连接字符串默认为:"mysql://rbac:CGJDF37DYjGPJyDc@43.159.53.148:3306/rbac"
