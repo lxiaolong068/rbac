@@ -222,6 +222,31 @@ GET /api/permissions
 }
 ```
 
+## 批量操作
+
+### 批量操作用户
+```
+POST /api/batch/users
+
+请求体：
+{
+    "ids": string[],
+    "action": "delete" | "disable"
+}
+
+响应：
+{
+    "success": boolean,
+    "failedIds": string[],
+    "message": string
+}
+```
+
+说明：
+- action=delete：批量删除用户
+- action=disable：批量禁用用户
+- failedIds：操作失败的用户ID列表
+
 ## 错误处理
 
 所有接口在发生错误时返回以下格式：

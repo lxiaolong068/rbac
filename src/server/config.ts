@@ -14,6 +14,10 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('7d'),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   BCRYPT_SALT_ROUNDS: z.string().transform(Number).default('10'),
+  TOKEN_REFRESH_INTERVAL: z.string().default('15m'),
+  MAX_LOGIN_ATTEMPTS: z.string().transform(Number).default('3'),
+  PASSWORD_HISTORY: z.string().transform(Number).default('3'),
+  REDIS_URL: z.string().optional(),
 });
 
 // 验证环境变量
@@ -29,12 +33,20 @@ export const config = {
   jwt: {
     secret: env.JWT_SECRET,
     expiresIn: env.JWT_EXPIRES_IN,
+    refreshInterval: env.TOKEN_REFRESH_INTERVAL,
   },
   cors: {
     origin: env.CORS_ORIGIN,
   },
   bcrypt: {
     saltRounds: env.BCRYPT_SALT_ROUNDS,
+  },
+  security: {
+    maxLoginAttempts: env.MAX_LOGIN_ATTEMPTS,
+    passwordHistory: env.PASSWORD_HISTORY,
+  },
+  redis: {
+    url: env.REDIS_URL,
   },
 } as const;
 

@@ -8,6 +8,7 @@
 - [数据库说明文档](docs/database.md) - 数据库架构和操作指南
 - [API 接口文档](docs/api.md) - 完整的 API 接口说明
 - [部署指南](docs/deployment.md) - 系统部署流程和最佳实践
+- [更新日志](docs/changelog.md) - 版本更新记录和计划功能
 
 ## 功能特性
 
