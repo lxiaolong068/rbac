@@ -5,7 +5,7 @@ node_modules
 
 # Testing
 coverage
-.cursor\rules
+.cursor/rules
 
 # Production
 dist
