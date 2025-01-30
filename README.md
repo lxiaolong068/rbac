@@ -60,11 +60,13 @@
 
 ### 后端
 - Node.js
-- Express
+- Fastify
 - TypeScript
 - PostgreSQL
-- TypeORM
+- Prisma
 - JWT 认证
+- Zod 验证
+- Pino 日志
 
 ## 快速开始
 
@@ -115,13 +117,26 @@ src/
 │   ├── pages/          # 页面组件
 │   └── services/       # API 服务
 ├── server/             # 后端代码
-│   ├── controllers/    # 控制器
-│   ├── entities/       # TypeORM 实体
-│   ├── middlewares/    # 中间件
-│   └── routes/        # 路由定义
+│   ├── config/         # 配置文件
+│   ├── lib/            # 工具函数
+│   ├── middleware/     # 中间件
+│   └── routes/         # 路由定义
 └── shared/            # 前后端共享代码
     └── types/         # TypeScript 类型定义
 ```
+
+## 特性
+
+- 🚀 高性能：基于 Fastify 的高性能后端框架
+- 🔐 安全性：完整的认证和授权机制
+- 🎯 类型安全：端到端的 TypeScript 支持
+- 📝 数据验证：使用 Zod 进行请求验证
+- 🔄 实时反馈：优雅的错误处理和状态管理
+- 📊 数据持久化：Prisma ORM 的类型安全数据库操作
+- 📝 日志系统：使用 Pino 进行结构化日志记录
+- 🎨 现代UI：基于 React 18 和 Tailwind CSS
+- 📱 响应式：全面支持移动端和桌面端
+- �� 暗色模式：内置暗色主题支持
 
 ## 生产环境部署
 
