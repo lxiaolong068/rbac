@@ -1,12 +1,10 @@
-import { Router } from 'express';
+import { FastifyPluginAsync, FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { config } from '../config';
 import { AppError } from '../middleware/errorHandler';
-
-const router = Router();
 
 // 登录请求验证schema
 const loginSchema = z.object({
@@ -26,10 +24,23 @@ const registerSchema = z.object({
   path: ['confirmPassword'],
 });
 
-// 登录路由
-router.post('/login', async (req, res, next) => {
-  try {
-    const data = loginSchema.parse(req.body);
+interface LoginBody {
+  username: string;
+  password: string;
+  remember?: boolean;
+}
+
+interface RegisterBody {
+  username: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+const authRouter: FastifyPluginAsync = async (fastify: FastifyInstance) => {
+  // 登录路由
+  fastify.post<{ Body: LoginBody }>('/login', async (request: FastifyRequest<{ Body: LoginBody }>, reply: FastifyReply) => {
+    const data = loginSchema.parse(request.body);
 
     // 查找用户
     const user = await prisma.user.findUnique({
@@ -86,7 +97,7 @@ router.post('/login', async (req, res, next) => {
     );
 
     // 返回用户信息和token
-    res.json({
+    return {
       data: {
         user: {
           id: user.id,
@@ -96,16 +107,12 @@ router.post('/login', async (req, res, next) => {
         },
         token,
       }
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+    };
+  });
 
-// 注册路由
-router.post('/register', async (req, res, next) => {
-  try {
-    const data = registerSchema.parse(req.body);
+  // 注册路由
+  fastify.post<{ Body: RegisterBody }>('/register', async (request: FastifyRequest<{ Body: RegisterBody }>, reply: FastifyReply) => {
+    const data = registerSchema.parse(request.body);
 
     // 检查用户名是否已存在
     const existingUser = await prisma.user.findFirst({
@@ -124,16 +131,70 @@ router.post('/register', async (req, res, next) => {
     // 加密密码
     const hashedPassword = await bcrypt.hash(data.password, config.bcrypt.saltRounds);
 
-    // 创建用户
-    const user = await prisma.user.create({
-      data: {
-        username: data.username,
-        email: data.email,
-        password: hashedPassword,
-      },
+    // 创建用户并分配基本角色
+    const user = await prisma.$transaction(async (tx) => {
+      // 创建用户
+      const newUser = await tx.user.create({
+        data: {
+          username: data.username,
+          email: data.email,
+          password: hashedPassword,
+        },
+      });
+
+      // 查找或创建基本角色
+      let basicRole = await tx.role.findFirst({
+        where: { name: 'user' },
+      });
+
+      if (!basicRole) {
+        basicRole = await tx.role.create({
+          data: {
+            name: 'user',
+            description: '基本用户角色',
+          },
+        });
+
+        // 创建基本权限
+        const basicPermissions = [
+          { resource: 'users', action: 'read' },
+          { resource: 'roles', action: 'read' },
+          { resource: 'permissions', action: 'read' },
+        ];
+
+        // 创建权限并关联到角色
+        for (const perm of basicPermissions) {
+          const permission = await tx.permission.create({
+            data: {
+              name: `${perm.resource}:${perm.action}`,
+              description: `允许${perm.action} ${perm.resource}`,
+              resource: perm.resource,
+              action: perm.action,
+            },
+          });
+
+          await tx.rolePermission.create({
+            data: {
+              roleId: basicRole.id,
+              permissionId: permission.id,
+            },
+          });
+        }
+      }
+
+      // 分配角色给用户
+      await tx.userRole.create({
+        data: {
+          userId: newUser.id,
+          roleId: basicRole.id,
+        },
+      });
+
+      return newUser;
     });
 
-    res.status(201).json({
+    reply.code(201);
+    return {
       status: 'success',
       data: {
         user: {
@@ -144,10 +205,8 @@ router.post('/register', async (req, res, next) => {
           updatedAt: user.updatedAt,
         },
       },
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+    };
+  });
+};
 
-export { router as authRouter };
+export { authRouter };

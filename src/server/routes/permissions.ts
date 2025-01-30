@@ -1,90 +1,94 @@
-import express from 'express';
+import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { PrismaClient } from '@prisma/client';
-import { verifyToken } from '../middleware/auth';
-import { validatePermission } from '../middleware/validation';
+import { auth } from '../middleware/auth';
+import { z } from 'zod';
 
-const router = express.Router();
 const prisma = new PrismaClient();
 
-// 获取所有权限
-router.get('/', verifyToken, async (req, res, next) => {
-  try {
-    const permissions = await prisma.permission.findMany();
-    res.json(permissions);
-  } catch (error) {
-    next(error);
-  }
+// 权限验证schema
+const permissionSchema = z.object({
+  name: z.string().min(1, '权限名称不能为空'),
+  description: z.string().optional(),
+  resource: z.string().min(1, '资源名称不能为空'),
+  action: z.string().min(1, '操作类型不能为空')
 });
 
-// 获取单个权限
-router.get('/:id', verifyToken, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const permission = await prisma.permission.findUnique({
-      where: { id: parseInt(id) }
-    });
-    
-    if (!permission) {
-      return res.status(404).json({ message: 'Permission not found' });
+interface PermissionBody {
+  name: string;
+  description?: string;
+  resource: string;
+  action: string;
+}
+
+const permissionRouter: FastifyPluginAsync = async (fastify) => {
+  // 获取所有权限
+  fastify.get('/', {
+    preHandler: auth(['permissions:read']),
+    handler: async (request: FastifyRequest, reply: FastifyReply) => {
+      const permissions = await prisma.permission.findMany();
+      return permissions;
     }
-    
-    res.json(permission);
-  } catch (error) {
-    next(error);
-  }
-});
+  });
 
-// 创建新权限
-router.post('/', verifyToken, validatePermission, async (req, res, next) => {
-  try {
-    const { name, description, type, actions } = req.body;
-    const permission = await prisma.permission.create({
-      data: {
-        name,
-        description,
-        type,
-        actions
+  // 获取单个权限
+  fastify.get<{ Params: { id: string } }>('/:id', {
+    preHandler: auth(['permissions:read']),
+    handler: async (request, reply) => {
+      const { id } = request.params;
+      const permission = await prisma.permission.findUnique({
+        where: { id }
+      });
+      
+      if (!permission) {
+        reply.code(404);
+        return { message: 'Permission not found' };
       }
-    });
-    res.status(201).json(permission);
-  } catch (error) {
-    next(error);
-  }
-});
+      
+      return permission;
+    }
+  });
 
-// 更新权限
-router.put('/:id', verifyToken, validatePermission, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { name, description, type, actions } = req.body;
-    
-    const permission = await prisma.permission.update({
-      where: { id: parseInt(id) },
-      data: {
-        name,
-        description,
-        type,
-        actions
-      }
-    });
-    
-    res.json(permission);
-  } catch (error) {
-    next(error);
-  }
-});
+  // 创建新权限
+  fastify.post<{ Body: PermissionBody }>('/', {
+    preHandler: auth(['permissions:create']),
+    handler: async (request, reply) => {
+      const data = permissionSchema.parse(request.body);
+      const permission = await prisma.permission.create({
+        data
+      });
+      reply.code(201);
+      return permission;
+    }
+  });
 
-// 删除权限
-router.delete('/:id', verifyToken, async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    await prisma.permission.delete({
-      where: { id: parseInt(id) }
-    });
-    res.status(204).send();
-  } catch (error) {
-    next(error);
-  }
-});
+  // 更新权限
+  fastify.put<{ Params: { id: string }, Body: PermissionBody }>('/:id', {
+    preHandler: auth(['permissions:update']),
+    handler: async (request, reply) => {
+      const { id } = request.params;
+      const data = permissionSchema.parse(request.body);
+      
+      const permission = await prisma.permission.update({
+        where: { id },
+        data
+      });
+      
+      return permission;
+    }
+  });
 
-export { router as permissionRouter };
+  // 删除权限
+  fastify.delete<{ Params: { id: string } }>('/:id', {
+    preHandler: auth(['permissions:delete']),
+    handler: async (request, reply) => {
+      const { id } = request.params;
+      await prisma.permission.delete({
+        where: { id }
+      });
+      reply.code(204);
+      return;
+    }
+  });
+};
+
+export { permissionRouter };
