@@ -1,17 +1,18 @@
 import { FastifyPluginAsync, FastifyRequest, FastifyReply } from 'fastify';
 import { z } from 'zod';
-import { prisma } from '../lib/prisma';
-import { AppError } from '../middleware/errorHandler';
-import { auth } from '../middleware/auth';
+import { prisma } from '../../config/database';
+import { authenticate } from '../middlewares/auth.middleware';
 
 interface UpdateUserRolesBody {
   roleIds: string[];
 }
 
 const userRouter: FastifyPluginAsync = async (fastify) => {
+  // 添加认证中间件
+  fastify.addHook('preHandler', authenticate);
+
   // 获取用户列表
   fastify.get('/', {
-    preHandler: auth(['users:read']),
     handler: async (request: FastifyRequest, reply: FastifyReply) => {
       const users = await prisma.user.findMany({
         select: {
@@ -48,7 +49,6 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
 
   // 获取单个用户
   fastify.get('/:id', {
-    preHandler: auth(['users:read']),
     handler: async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
       const user = await prisma.user.findUnique({
         where: { id: request.params.id },
@@ -85,7 +85,7 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
       });
 
       if (!user) {
-        throw new AppError(404, '用户不存在');
+        throw new Error('用户不存在');
       }
 
       return {
@@ -109,7 +109,6 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
   });
 
   fastify.put<{ Params: { id: string }, Body: UpdateUserRolesBody }>('/:id/roles', {
-    preHandler: auth(['users:update']),
     handler: async (request, reply) => {
       const { roleIds } = updateUserRolesSchema.parse(request.body);
 
@@ -119,7 +118,7 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
       });
 
       if (!user) {
-        throw new AppError(404, '用户不存在');
+        throw new Error('用户不存在');
       }
 
       // 检查角色是否都存在
@@ -128,7 +127,7 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
       });
 
       if (roles.length !== roleIds.length) {
-        throw new AppError(400, '部分角色不存在');
+        throw new Error('部分角色不存在');
       }
 
       // 更新用户角色
@@ -183,14 +182,13 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
 
   // 删除用户
   fastify.delete<{ Params: { id: string } }>('/:id', {
-    preHandler: auth(['users:delete']),
     handler: async (request, reply) => {
       const user = await prisma.user.findUnique({
         where: { id: request.params.id },
       });
 
       if (!user) {
-        throw new AppError(404, '用户不存在');
+        throw new Error('用户不存在');
       }
 
       await prisma.user.delete({
@@ -203,4 +201,4 @@ const userRouter: FastifyPluginAsync = async (fastify) => {
   });
 };
 
-export { userRouter }; 
+export default userRouter;

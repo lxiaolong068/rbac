@@ -7,7 +7,8 @@
 - [配置说明文档](docs/config.md) - 详细的系统配置说明
 - [数据库说明文档](docs/database.md) - 数据库架构和操作指南
 - [API 接口文档](docs/api.md) - 完整的 API 接口说明
-- [部署指南](docs/deployment.md) - 系统部署流程和最佳实践
+- [Vercel部署指南](docs/deployment-vercel.md)
+- [宝塔部署指南](docs/deployment-baota.md)
 - [更新日志](docs/changelog.md) - 版本更新记录和计划功能
 
 ## 功能特性
@@ -125,20 +126,9 @@ src/
     └── types/         # TypeScript 类型定义
 ```
 
-## 特性
+## 部署指南
 
-- 🚀 高性能：基于 Fastify 的高性能后端框架
-- 🔐 安全性：完整的认证和授权机制
-- 🎯 类型安全：端到端的 TypeScript 支持
-- 📝 数据验证：使用 Zod 进行请求验证
-- 🔄 实时反馈：优雅的错误处理和状态管理
-- 📊 数据持久化：Prisma ORM 的类型安全数据库操作
-- 📝 日志系统：使用 Pino 进行结构化日志记录
-- 🎨 现代UI：基于 React 18 和 Tailwind CSS
-- 📱 响应式：全面支持移动端和桌面端
-- �� 暗色模式：内置暗色主题支持
-
-## 生产环境部署
+### 生产环境部署
 
 1. 构建项目
 ```bash
@@ -148,6 +138,48 @@ pnpm build
 2. 启动服务
 ```bash
 pnpm start
+```
+
+### 多平台部署指南
+
+#### Vercel 部署
+1. 安装Vercel CLI：`pnpm add -g vercel`
+2. 配置环境变量：
+```bash
+vercel env add DATABASE_URL production
+vercel env add NODE_ENV production
+```
+3. 适配配置：
+```js
+// vite.config.ts
+export default defineConfig({
+  server: { port: process.env.PORT || 3000 } // 兼容Vercel动态端口
+})
+```
+
+#### 宝塔面板部署
+1. 安装基础环境：
+```bash
+# Node.js 18.x
+pnpm env use --global 18
+# MySQL/PostgreSQL 根据选择安装
+```
+2. PM2配置：
+```json
+{
+  "name": "rbac",
+  "script": "dist/server/index.js",
+  "env": {
+    "DATABASE_URL": "mysql://user:pass@localhost:3306/db"
+  }
+}
+```
+3. Nginx反向代理配置示例：
+```nginx
+location / {
+  proxy_pass http://localhost:3000;
+  proxy_set_header Host $host;
+}
 ```
 
 ## 贡献指南

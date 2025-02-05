@@ -1,5 +1,5 @@
 import winston from 'winston';
-import 'winston-daily-rotate-file';
+import DailyRotateFile from 'winston-daily-rotate-file';
 import { join } from 'path';
 
 const logDir = process.env.LOG_DIR || 'logs';
@@ -16,7 +16,7 @@ const logFormat = winston.format.combine(
 );
 
 // 创建日志轮转传输
-const dailyRotateTransport = new winston.transports.DailyRotateFile({
+const dailyRotateTransport = new DailyRotateFile({
   filename: join(logDir, '%DATE%-app.log'),
   datePattern: 'YYYY-MM-DD',
   zippedArchive: true,
@@ -26,7 +26,7 @@ const dailyRotateTransport = new winston.transports.DailyRotateFile({
 });
 
 // 创建错误日志轮转传输
-const errorRotateTransport = new winston.transports.DailyRotateFile({
+const errorRotateTransport = new DailyRotateFile({
   filename: join(logDir, '%DATE%-error.log'),
   datePattern: 'YYYY-MM-DD',
   zippedArchive: true,

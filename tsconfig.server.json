@@ -7,12 +7,15 @@
     "strict": true,
     "skipLibCheck": true,
     "outDir": "dist/server",
-    "rootDir": "src/server",
+    "rootDir": "src",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@server/*": ["src/server/*"],
+      "@shared/*": ["src/shared/*"],
+      "@config/*": ["src/config/*"]
     }
   },
-  "include": ["src/server/**/*"],
+  "include": ["src/server/**/*", "src/shared/**/*", "src/config/**/*"],
   "exclude": ["src/client/**/*"]
-} 
+}

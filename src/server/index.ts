@@ -1,13 +1,13 @@
-import fastify from 'fastify';
+import fastify, { FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import compress from '@fastify/compress';
 import { config } from './config';
 import { errorHandler } from './middleware/errorHandler';
 import { authRouter } from './routes/auth';
-import { userRouter } from './routes/users';
-import { roleRouter } from './routes/roles';
-import { permissionRouter } from './routes/permissions';
+import userRouter from './routes/users';
+import roleRouter from './routes/roles';
+import permissionRouter from './routes/permissions';
 
 const app = fastify({
   logger: {
@@ -35,7 +35,7 @@ const app = fastify({
 async function bootstrap() {
   try {
     // 请求体解析
-    await app.addContentTypeParser('application/json', { parseAs: 'string' }, async (req, body) => {
+    await app.addContentTypeParser('application/json', { parseAs: 'string' }, async (req: FastifyRequest, body: string) => {
       try {
         return body.length > 0 ? JSON.parse(body as string) : {};
       } catch (err) {

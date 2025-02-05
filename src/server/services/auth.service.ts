@@ -1,14 +1,16 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../../config/database.js';
-import type { LoginRequest, RegisterRequest, ChangePasswordRequest } from '../../shared/types/auth.js';
+import { prisma } from '../../config/database';
+import type { LoginRequest, RegisterRequest, ChangePasswordRequest } from '../../shared/types/auth';
+import { JWT_SECRET, JWT_EXPIRES_IN } from '../../config/constants';
+import type { Role, Permission, UserRole } from '@prisma/client';
 
 export class AuthService {
   private static generateToken(userId: string, username: string, roles: string[], permissions: string[]) {
     return jwt.sign(
       { userId, username, roles, permissions },
-      process.env.JWT_SECRET!,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      Buffer.from(JWT_SECRET),
+      { expiresIn: Number(JWT_EXPIRES_IN) }
     );
   }
 
@@ -50,10 +52,12 @@ export class AuthService {
       throw new Error('用户名或密码错误');
     }
 
-    const roles = user.userRoles.map(ur => ur.role.name);
-    const permissions = user.userRoles.flatMap(ur => 
-      ur.role.rolePerms.map(rp => `${rp.permission.resource}:${rp.permission.action}`)
-    );
+    const roles = user.userRoles.map((ur: UserRole & { role: Role }) => ur.role.name);
+    const permissions = user.userRoles.flatMap((ur: UserRole & { 
+      role: Role & { 
+        rolePerms: Array<{ permission: Permission }> 
+      } 
+    }) => ur.role.rolePerms.map(rp => `${rp.permission.resource}:${rp.permission.action}`));
 
     const token = this.generateToken(user.id, user.username, roles, permissions);
 

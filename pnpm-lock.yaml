@@ -89,6 +89,9 @@ importers:
       winston:
         specifier: ^3.17.0
         version: 3.17.0
+      winston-daily-rotate-file:
+        specifier: ^5.0.0
+        version: 5.0.0(winston@3.17.0)
       zod:
         specifier: ^3.24.1
         version: 3.24.1
@@ -168,6 +171,9 @@ importers:
       ts-node-dev:
         specifier: ^2.0.0
         version: 2.0.0(@types/node@20.17.16)(typescript@5.7.3)
+      tsconfig-paths:
+        specifier: ^4.2.0
+        version: 4.2.0
       tsx:
         specifier: ^4.19.2
         version: 4.19.2
@@ -3528,6 +3534,10 @@ packages:
       '@swc/wasm':
         optional: true
 
+  tsconfig-paths@4.2.0:
+    resolution: {integrity: sha512-NoZ4roiN7LnbKn9QqE1amc9DJfzvZXxF4xDavcOWt1BPkdx+m+0gJuPM+S0vCe7zTJMYUP0R8pO2XMr+Y8oLIg==}
+    engines: {node: '>=6'}
+
   tsconfig@7.0.0:
     resolution: {integrity: sha512-vZXmzPrL+EmC4T/4rVlT2jNVMWCi/O4DIiSj3UHg1OE5kCKbk4mfrXc6dZksLgRM/TZlKnousKH9bbTazUWRRw==}
 
@@ -3660,6 +3670,12 @@ packages:
 
   winston-daily-rotate-file@4.7.1:
     resolution: {integrity: sha512-7LGPiYGBPNyGHLn9z33i96zx/bd71pjBn9tqQzO3I4Tayv94WPmBNwKC7CO1wPHdP9uvu+Md/1nr6VSH9h0iaA==}
+    engines: {node: '>=8'}
+    peerDependencies:
+      winston: ^3
+
+  winston-daily-rotate-file@5.0.0:
+    resolution: {integrity: sha512-JDjiXXkM5qvwY06733vf09I2wnMXpZEhxEVOSPenZMii+g7pcDcTBt2MRugnoi8BwVSuCT2jfRXBUy+n1Zz/Yw==}
     engines: {node: '>=8'}
     peerDependencies:
       winston: ^3
@@ -7205,6 +7221,12 @@ snapshots:
       v8-compile-cache-lib: 3.0.1
       yn: 3.1.1
 
+  tsconfig-paths@4.2.0:
+    dependencies:
+      json5: 2.2.3
+      minimist: 1.2.8
+      strip-bom: 3.0.0
+
   tsconfig@7.0.0:
     dependencies:
       '@types/strip-bom': 3.0.0
@@ -7318,6 +7340,14 @@ snapshots:
     dependencies:
       file-stream-rotator: 0.6.1
       object-hash: 2.2.0
+      triple-beam: 1.4.1
+      winston: 3.17.0
+      winston-transport: 4.9.0
+
+  winston-daily-rotate-file@5.0.0(winston@3.17.0):
+    dependencies:
+      file-stream-rotator: 0.6.1
+      object-hash: 3.0.0
       triple-beam: 1.4.1
       winston: 3.17.0
       winston-transport: 4.9.0

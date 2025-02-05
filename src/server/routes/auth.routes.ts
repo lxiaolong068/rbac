@@ -1,15 +1,25 @@
-import { Router } from 'express';
-import { AuthController } from '../controllers/auth.controller.js';
-import { authenticate } from '../middlewares/auth.middleware.js';
+import { FastifyPluginAsync } from 'fastify';
+import fp from 'fastify-plugin';
+import { AuthController } from '../controllers/auth.controller';
+import { authenticate } from '../middlewares/auth.middleware';
 
-const router = Router();
+const authRoutes: FastifyPluginAsync = async (fastify) => {
+  // 公开路由
+  // 登录路由
+  fastify.post('/auth/login', AuthController.login);
+  
+  // 注册路由
+  fastify.post('/auth/register', AuthController.register);
+  
+  // 重置密码路由
+  fastify.post('/auth/reset-password', AuthController.resetPassword);
 
-// 公开路由
-router.post('/login', AuthController.login);
-router.post('/register', AuthController.register);
-router.post('/reset-password', AuthController.resetPassword);
+  // 需要认证的路由
+  // 修改密码路由
+  fastify.post('/auth/change-password', {
+    preHandler: authenticate,
+    handler: AuthController.changePassword
+  });
+};
 
-// 需要认证的路由
-router.post('/change-password', authenticate, AuthController.changePassword);
-
-export default router; 
+export default fp(authRoutes);
