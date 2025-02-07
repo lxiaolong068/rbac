@@ -5,3 +5,5 @@
 - 统一使用pnpm命令
 - 本项目需要同时兼容MySQL和pgsql两种数据库
 - 在开发环境下，环境变量中的数据库连接字符串默认为:"mysql://rbac:CGJDF37DYjGPJyDc@43.159.53.148:3306/rbac"
+- 在生产环境下，环境变量中的数据库连接字符串默认为:"mysql://rbac:password@localhost:3306/rbac"
+- 由于是在windows环境下开发，请优先使用powershell中命令
