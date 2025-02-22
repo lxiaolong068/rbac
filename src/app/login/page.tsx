@@ -1,34 +1,34 @@
 import { Metadata } from 'next';
-import LoginForm from '@/components/auth/login-form';
+import LoginForm from '@/components/auth/LoginForm';
 import { Box, Container, Paper, Typography } from '@mui/material';
 
 export const metadata: Metadata = {
-  title: '登录 - RBAC系统',
-  description: '登录到RBAC权限管理系统',
+  title: '登录 - RBAC权限管理系统',
+  description: '使用用户名和密码登录系统',
 };
 
 export default function LoginPage() {
   return (
-    <Container component="main" maxWidth="xs">
+    <Container maxWidth="sm">
       <Box
         sx={{
-          marginTop: 8,
+          minHeight: '100vh',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
+          justifyContent: 'center',
+          py: 4,
         }}
       >
         <Paper
           elevation={3}
           sx={{
-            padding: 4,
+            p: 4,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
-            width: '100%',
           }}
         >
-          <Typography component="h1" variant="h5">
+          <Typography component="h1" variant="h5" gutterBottom>
             登录
           </Typography>
           <LoginForm />

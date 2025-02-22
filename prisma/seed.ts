@@ -5,138 +5,218 @@ const prisma = new PrismaClient();
 
 async function main() {
   try {
+    // 创建超级管理员角色
+    const adminRole = await prisma.role.create({
+      data: {
+        name: 'admin',
+        description: '超级管理员',
+        isSystem: true,
+        priority: 0,
+      },
+    });
+
     // 创建基础权限
     const permissions = await Promise.all([
+      // 用户管理权限
       prisma.permission.create({
         data: {
-          name: 'user:read',
-          description: '查看用户信息',
+          name: '查看用户',
+          code: 'user:read',
           type: 'API',
           resource: 'user',
-          action: 'READ',
+          action: 'read',
           isSystem: true,
         },
       }),
       prisma.permission.create({
         data: {
-          name: 'user:write',
-          description: '修改用户信息',
+          name: '创建用户',
+          code: 'user:create',
           type: 'API',
           resource: 'user',
-          action: 'WRITE',
+          action: 'create',
           isSystem: true,
         },
       }),
       prisma.permission.create({
         data: {
-          name: 'role:read',
-          description: '查看角色信息',
+          name: '更新用户',
+          code: 'user:update',
           type: 'API',
-          resource: 'role',
-          action: 'READ',
+          resource: 'user',
+          action: 'update',
           isSystem: true,
         },
       }),
       prisma.permission.create({
         data: {
-          name: 'role:write',
-          description: '修改角色信息',
+          name: '删除用户',
+          code: 'user:delete',
+          type: 'API',
+          resource: 'user',
+          action: 'delete',
+          isSystem: true,
+        },
+      }),
+
+      // 角色管理权限
+      prisma.permission.create({
+        data: {
+          name: '查看角色',
+          code: 'role:read',
           type: 'API',
           resource: 'role',
-          action: 'WRITE',
+          action: 'read',
+          isSystem: true,
+        },
+      }),
+      prisma.permission.create({
+        data: {
+          name: '创建角色',
+          code: 'role:create',
+          type: 'API',
+          resource: 'role',
+          action: 'create',
+          isSystem: true,
+        },
+      }),
+      prisma.permission.create({
+        data: {
+          name: '更新角色',
+          code: 'role:update',
+          type: 'API',
+          resource: 'role',
+          action: 'update',
+          isSystem: true,
+        },
+      }),
+      prisma.permission.create({
+        data: {
+          name: '删除角色',
+          code: 'role:delete',
+          type: 'API',
+          resource: 'role',
+          action: 'delete',
+          isSystem: true,
+        },
+      }),
+
+      // 权限管理权限
+      prisma.permission.create({
+        data: {
+          name: '查看权限',
+          code: 'permission:read',
+          type: 'API',
+          resource: 'permission',
+          action: 'read',
+          isSystem: true,
+        },
+      }),
+      prisma.permission.create({
+        data: {
+          name: '分配权限',
+          code: 'permission:assign',
+          type: 'API',
+          resource: 'permission',
+          action: 'assign',
           isSystem: true,
         },
       }),
     ]);
 
-    // 创建管理员角色
-    const adminRole = await prisma.role.create({
-      data: {
-        name: 'admin',
-        description: '系统管理员',
-        isSystem: true,
-        priority: 0,
-        permissions: {
-          connect: permissions.map(p => ({ id: p.id })),
-        },
-      },
-    });
+    // 为超级管理员角色分配所有权限
+    await Promise.all(
+      permissions.map((permission) =>
+        prisma.rolePermission.create({
+          data: {
+            roleId: adminRole.id,
+            permissionId: permission.id,
+          },
+        })
+      )
+    );
 
-    // 创建普通用户角色
-    const userRole = await prisma.role.create({
+    // 创建超级管理员用户
+    const adminPassword = await hash(process.env.ADMIN_PASSWORD || 'admin123', 10);
+    const adminUser = await prisma.user.create({
       data: {
-        name: 'user',
-        description: '普通用户',
-        isSystem: true,
-        priority: 1,
-        permissions: {
-          connect: [
-            { id: permissions[0].id }, // user:read
-          ],
-        },
-      },
-    });
-
-    // 创建管理员用户
-    const adminPassword = await hash('admin123', 10);
-    const admin = await prisma.user.create({
-      data: {
-        email: 'admin@example.com',
+        username: process.env.ADMIN_USERNAME || 'admin',
+        email: process.env.ADMIN_EMAIL || 'admin@example.com',
         password: adminPassword,
-        name: 'Admin',
-        isVerified: true,
-        roles: {
-          connect: [{ id: adminRole.id }],
-        },
+        name: '超级管理员',
+        status: true,
       },
     });
 
-    // 创建测试用户
-    const userPassword = await hash('user123', 10);
-    const user = await prisma.user.create({
+    // 为超级管理员用户分配超级管理员角色
+    await prisma.userRole.create({
       data: {
-        email: 'user@example.com',
-        password: userPassword,
-        name: 'Test User',
-        isVerified: true,
-        roles: {
-          connect: [{ id: userRole.id }],
-        },
+        userId: adminUser.id,
+        roleId: adminRole.id,
       },
     });
 
     // 创建基础菜单
-    const menus = await Promise.all([
-      prisma.menu.create({
-        data: {
-          name: '仪表板',
-          path: '/dashboard',
-          icon: 'dashboard',
-          order: 1,
-        },
-      }),
+    const dashboardMenu = await prisma.menu.create({
+      data: {
+        name: '仪表盘',
+        path: '/dashboard',
+        icon: 'dashboard',
+        order: 1,
+        isVisible: true,
+      },
+    });
+
+    const systemMenu = await prisma.menu.create({
+      data: {
+        name: '系统管理',
+        icon: 'settings',
+        order: 100,
+        isVisible: true,
+      },
+    });
+
+    await Promise.all([
       prisma.menu.create({
         data: {
           name: '用户管理',
-          path: '/users',
-          icon: 'users',
-          order: 2,
+          path: '/system/users',
+          icon: 'user',
+          parent: {
+            connect: {
+              id: systemMenu.id,
+            },
+          },
+          order: 1,
+          isVisible: true,
         },
       }),
       prisma.menu.create({
         data: {
           name: '角色管理',
-          path: '/roles',
-          icon: 'roles',
-          order: 3,
+          path: '/system/roles',
+          icon: 'role',
+          parent: {
+            connect: {
+              id: systemMenu.id,
+            },
+          },
+          order: 2,
+          isVisible: true,
         },
       }),
       prisma.menu.create({
         data: {
           name: '权限管理',
-          path: '/permissions',
-          icon: 'permissions',
-          order: 4,
+          path: '/system/permissions',
+          icon: 'permission',
+          parent: {
+            connect: {
+              id: systemMenu.id,
+            },
+          },
+          order: 3,
+          isVisible: true,
         },
       }),
     ]);
@@ -149,7 +229,7 @@ async function main() {
       },
     });
 
-    console.log('Seed data created successfully');
+    console.log('Database has been seeded. 🌱');
   } catch (error) {
     console.error('Error seeding data:', error);
     throw error;

@@ -12,104 +12,137 @@ datasource db {
 
 // 用户模型
 model User {
-  id            Int           @id @default(autoincrement())
-  email         String        @unique
-  password      String
-  name          String?
-  avatar        String?
-  status        Boolean       @default(true)
-  roles         Role[]        @relation("UserRoles")
-  createdAt     DateTime      @default(now()) @map("created_at")
-  updatedAt     DateTime      @updatedAt @map("updated_at")
-  lastLoginAt   DateTime?     @map("last_login_at")
-  loginCount    Int          @default(0) @map("login_count")
-  refreshTokens RefreshToken[]
-  auditLogs     AuditLog[]
-  metadata      Json?        // 存储用户额外的元数据
-  isVerified    Boolean      @default(false) @map("is_verified")
-  verifiedAt    DateTime?    @map("verified_at")
-  phoneNumber   String?      @map("phone_number")
-  twoFactorEnabled Boolean   @default(false) @map("two_factor_enabled")
-  twoFactorSecret String?    @map("two_factor_secret")
+  id              String         @id @default(cuid())
+  username        String         @unique
+  email           String         @unique
+  password        String
+  name            String?
+  avatar          String?
+  status          Boolean        @default(true)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  lastLoginAt     DateTime?
+  loginCount      Int           @default(0)
+  roles           UserRole[]     // 用户角色关联
+  sessions        Session[]      // 会话关联
+  accounts        Account[]      // OAuth账号关联
+  auditLogs       AuditLog[]    // 审计日志关联
 
-  @@map("users")
+  @@index([email])
+  @@index([username])
+  @@index([createdAt])
 }
 
 // 角色模型
 model Role {
-  id          Int          @id @default(autoincrement())
-  name        String       @unique
+  id          String        @id @default(cuid())
+  name        String        @unique
   description String?
-  users       User[]       @relation("UserRoles")
-  permissions Permission[] @relation("RolePermissions")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-  isSystem    Boolean      @default(false) @map("is_system")
+  isSystem    Boolean       @default(false)
   priority    Int          @default(0)
-  parentRole  Role?        @relation("RoleHierarchy", fields: [parentId], references: [id])
-  parentId    Int?         @map("parent_id")
-  childRoles  Role[]       @relation("RoleHierarchy")
-  auditLogs   AuditLog[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  users       UserRole[]    // 角色用户关联
+  permissions RolePermission[] // 角色权限关联
 
-  @@map("roles")
+  @@index([name])
+  @@index([priority])
 }
 
 // 权限模型
 model Permission {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
+  id          String        @id @default(cuid())
+  name        String        @unique
+  code        String        @unique // 权限编码，如 'user:create'
   description String?
-  roles       Role[]   @relation("RolePermissions")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  type        String   // API, MENU, OPERATION 等
-  resource    String   // 资源标识
-  action      String   // CREATE, READ, UPDATE, DELETE 等
-  conditions  Json?    // 权限条件（如数据过滤规则）
-  isSystem    Boolean  @default(false) @map("is_system")
-  auditLogs   AuditLog[]
+  type        String        // API, MENU, BUTTON 等
+  resource    String        // 资源类型
+  action      String        // 操作类型：CREATE, READ, UPDATE, DELETE
+  isSystem    Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  roles       RolePermission[] // 权限角色关联
 
-  @@map("permissions")
+  @@index([code])
   @@index([type, resource, action])
 }
 
-// 刷新令牌模型
-model RefreshToken {
-  id        Int      @id @default(autoincrement())
-  token     String   @unique
-  userId    Int      @map("user_id")
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime @map("expires_at")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  isRevoked Boolean  @default(false) @map("is_revoked")
-  deviceInfo Json?   @map("device_info")
+// 用户-角色关联表
+model UserRole {
+  id        String    @id @default(cuid())
+  userId    String
+  roleId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-  @@map("refresh_tokens")
-  @@index([userId, expiresAt])
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@index([roleId])
+}
+
+// 角色-权限关联表
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  permissionId String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+}
+
+// 会话模型
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// OAuth账号模型
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 // 审计日志模型
 model AuditLog {
-  id           Int         @id @default(autoincrement())
-  userId       Int?        @map("user_id")
-  user         User?       @relation(fields: [userId], references: [id])
-  roleId       Int?        @map("role_id")
-  role         Role?       @relation(fields: [roleId], references: [id])
-  permissionId Int?        @map("permission_id")
-  permission   Permission? @relation(fields: [permissionId], references: [id])
-  action       String      // 操作类型
-  resource     String      // 资源类型
-  details      Json?       // 详细信息
-  ipAddress    String?     @map("ip_address")
-  userAgent    String?     @map("user_agent")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  status       String      // SUCCESS, FAILURE
-  errorMessage String?     @map("error_message")
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  resource  String
+  details   String?  @db.Text
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("audit_logs")
-  @@index([userId, createdAt])
+  @@index([userId])
   @@index([action, resource])
+  @@index([createdAt])
 }
 
 // 系统配置模型

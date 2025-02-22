@@ -1,43 +1,32 @@
 import { PrismaClient } from '@prisma/client'
-import { logger } from './logger'
+import logger from './logger'
 
-const prisma = new PrismaClient({
-  log: [
-    {
-      emit: 'event',
-      level: 'query',
-    },
-    {
-      emit: 'event',
-      level: 'error',
-    },
-    {
-      emit: 'event',
-      level: 'info',
-    },
-    {
-      emit: 'event',
-      level: 'warn',
-    },
-  ],
-})
+declare global {
+  var prisma: PrismaClient | undefined
+}
 
-// 日志事件处理
-prisma.$on('query', (e) => {
+export const prisma = global.prisma || new PrismaClient()
+
+if (process.env.NODE_ENV !== 'production') {
+  global.prisma = prisma
+}
+
+// 为避免类型错误，将事件名称和事件参数均设为 any
+prisma.$on('query' as any, (e: any) => {
   logger.debug('Query: ' + e.query)
   logger.debug('Params: ' + e.params)
   logger.debug('Duration: ' + e.duration + 'ms')
 })
 
-prisma.$on('error', (e) => {
+prisma.$on('error' as any, (e: any) => {
   logger.error('Database error: ' + e.message)
 })
 
-prisma.$on('info', (e) => {
+prisma.$on('info' as any, (e: any) => {
   logger.info('Database info: ' + e.message)
 })
 
-prisma.$on('warn', (e) => {
+prisma.$on('warn' as any, (e: any) => {
   logger.warn('Database warning: ' + e.message)
 })
 

@@ -20,6 +20,13 @@ export default function SetupWizard() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
+    // 数据库配置
+    dbHost: '',
+    dbPort: '3306',
+    dbName: '',
+    dbUser: '',
+    dbPassword: '',
+    // 管理员配置
     adminUsername: '',
     adminPassword: '',
     adminEmail: '',
@@ -38,11 +45,25 @@ export default function SetupWizard() {
           throw new Error(data.message || '环境检查失败')
         }
       } else if (activeStep === 1) {
-        // 数据库配置检查
-        const res = await fetch('/api/setup/check-database')
+        // 验证数据库配置
+        if (!formData.dbHost || !formData.dbPort || !formData.dbName || !formData.dbUser || !formData.dbPassword) {
+          throw new Error('请填写所有数据库配置字段')
+        }
+        
+        // 构建数据库连接URL
+        const dbUrl = `mysql://${formData.dbUser}:${formData.dbPassword}@${formData.dbHost}:${formData.dbPort}/${formData.dbName}`
+        
+        // 测试数据库连接
+        const res = await fetch('/api/setup/check-database', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ dbUrl }),
+        })
         const data = await res.json()
         if (!data.success) {
-          throw new Error(data.message || '数据库配置检查失败')
+          throw new Error(data.message || '数据库连接失败')
         }
       } else if (activeStep === 2) {
         // 表单验证
@@ -62,7 +83,11 @@ export default function SetupWizard() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(formData),
+          body: JSON.stringify({
+            username: formData.adminUsername,
+            password: formData.adminPassword,
+            email: formData.adminEmail,
+          }),
         })
         const data = await res.json()
         if (!data.success) {
@@ -97,8 +122,56 @@ export default function SetupWizard() {
         return (
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">数据库配置</h2>
-            <p>正在验证数据库连接...</p>
-            {loading && <CircularProgress size={24} className="mt-4" />}
+            <TextField
+              fullWidth
+              label="数据库主机"
+              value={formData.dbHost}
+              onChange={(e) => setFormData(prev => ({ ...prev, dbHost: e.target.value }))}
+              required
+              disabled={loading}
+              className="mb-4"
+              placeholder="localhost"
+            />
+            <TextField
+              fullWidth
+              label="端口"
+              value={formData.dbPort}
+              onChange={(e) => setFormData(prev => ({ ...prev, dbPort: e.target.value }))}
+              required
+              disabled={loading}
+              className="mb-4"
+              placeholder="3306"
+            />
+            <TextField
+              fullWidth
+              label="数据库名"
+              value={formData.dbName}
+              onChange={(e) => setFormData(prev => ({ ...prev, dbName: e.target.value }))}
+              required
+              disabled={loading}
+              className="mb-4"
+              placeholder="rbac"
+            />
+            <TextField
+              fullWidth
+              label="用户名"
+              value={formData.dbUser}
+              onChange={(e) => setFormData(prev => ({ ...prev, dbUser: e.target.value }))}
+              required
+              disabled={loading}
+              className="mb-4"
+              placeholder="root"
+            />
+            <TextField
+              fullWidth
+              label="密码"
+              type="password"
+              value={formData.dbPassword}
+              onChange={(e) => setFormData(prev => ({ ...prev, dbPassword: e.target.value }))}
+              required
+              disabled={loading}
+              className="mb-4"
+            />
           </div>
         )
       case 2:

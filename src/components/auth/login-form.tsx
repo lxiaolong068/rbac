@@ -1,123 +1,75 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Box, Button, TextField, Alert } from '@mui/material';
-import { z } from 'zod';
+import * as React from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
 
-const loginSchema = z.object({
-  email: z.string().email('请输入有效的邮箱地址'),
-  password: z.string().min(6, '密码至少需要6个字符'),
-});
+import { Button } from "@/components/ui/button"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 
-export default function LoginForm() {
-  const router = useRouter();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+const formSchema = z.object({
+  username: z.string().min(2, {
+    message: "用户名至少需要2个字符",
+  }),
+  password: z.string().min(6, {
+    message: "密码至少需要6个字符",
+  }),
+})
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+export function LoginForm() {
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
+  })
 
-    try {
-      // 验证表单数据
-      loginSchema.parse(formData);
-
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || '登录失败');
-      }
-
-      // 存储token
-      localStorage.setItem('token', data.token);
-      
-      // 跳转到仪表板
-      router.push('/dashboard');
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        setError(err.errors[0].message);
-      } else if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('登录过程中发生错误');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    // TODO: 实现登录逻辑
+    console.log(values)
+  }
 
   return (
-    <Box
-      component="form"
-      onSubmit={handleSubmit}
-      sx={{
-        width: '100%',
-        mt: 1,
-      }}
-    >
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
-      )}
-      
-      <TextField
-        margin="normal"
-        required
-        fullWidth
-        id="email"
-        label="邮箱地址"
-        name="email"
-        autoComplete="email"
-        autoFocus
-        value={formData.email}
-        onChange={handleChange}
-      />
-      
-      <TextField
-        margin="normal"
-        required
-        fullWidth
-        name="password"
-        label="密码"
-        type="password"
-        id="password"
-        autoComplete="current-password"
-        value={formData.password}
-        onChange={handleChange}
-      />
-
-      <Button
-        type="submit"
-        fullWidth
-        variant="contained"
-        disabled={loading}
-        sx={{ mt: 3, mb: 2 }}
-      >
-        {loading ? '登录中...' : '登录'}
-      </Button>
-    </Box>
-  );
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <FormField
+          control={form.control}
+          name="username"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>用户名</FormLabel>
+              <FormControl>
+                <Input placeholder="请输入用户名" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>密码</FormLabel>
+              <FormControl>
+                <Input type="password" placeholder="请输入密码" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit">登录</Button>
+      </form>
+    </Form>
+  )
 } 
